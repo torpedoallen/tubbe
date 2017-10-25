@@ -94,7 +94,7 @@ class NoCacheCommand(AbstractCommand):
         return
 
 
-class BaseGeventCommand(BaseCommand):
+class BaseAsyncCommand(BaseCommand):
 
     def _do_cache(self, *a, **kw):
         # TODO: logging
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     from gevent import monkey
     monkey.patch_all()
 
-    class PowCommand(BaseGeventCommand):
+    class PowCommand(BaseAsyncCommand):
     #class PowCommand(BaseSyncCommand):
 
         def run(self, n):
