@@ -6,6 +6,7 @@ import abc
 import gevent
 import logging
 import signal
+import datetime
 import traceback
 from functools import wraps
 from contextlib import contextmanager
@@ -26,16 +27,14 @@ log_level=DEBUG log_time=2017-10-24 10:01:58.728277 command_name=HelloWorldComma
 class TubbeTimeoutException(Exception):
     pass
 
-def _fallback(fallback_func):
+def _fallback(callback):
     def deco(f):
         @wraps(f)
         def _(*a, **kw):
             try:
                 return f(*a, **kw)
             except:
-                # already printed to stderr \
-                #        in greenlet's join function.
-                return fallback_func(*a, **kw)
+                return callback(*a, **kw)
         return _
     return deco
 
@@ -84,18 +83,6 @@ class BaseCommand(AbstractCommand):
         raise NotImplemented
 
 
-class NoCacheCommand(AbstractCommand):
-
-    def run(self, *a, **kw):
-        raise NotImplemented
-
-    def fallback(self, *a, **kw):
-        raise NotImplemented
-
-    def cache(self, *a, **kw):
-        return
-
-
 class BaseAsyncCommand(BaseCommand):
 
     def _do_cache(self, *a, **kw):
@@ -105,16 +92,67 @@ class BaseAsyncCommand(BaseCommand):
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
         # TODO: logging
+        start_time = datetime.datetime.now()
         job = gevent.Greenlet.spawn(self.fallback, *a, **kw)
         job.join(self.timeout)
-        return job.get(block=False, timeout=self.timeout)
+        try:
+            v = job.get(block=False, timeout=self.timeout)
+            self.logger.info({
+                'command': self.name,
+                'action': 'fallback',
+                'fallback': None,
+                'timeout': self.timeout,
+                'success': 'yes',
+                'start_time': start_time,
+                'end_time': datetime.datetime.now(),
+                })
+
+            return v
+        except:
+            self.logger.error({
+                'command': self.name,
+                'action': 'fallback',
+                'fallback': str(self.cache),
+                'timeout': self.timeout,
+                'success': 'no',
+                'start_time': start_time,
+                'end_time': datetime.datetime.now(),
+                })
+
+            raise
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
         # TODO: logging
+        start_time = datetime.datetime.now()
         job = gevent.Greenlet.spawn(self.run, *a, **kw)
         job.join(self.timeout)
-        return job.get(block=False, timeout=self.timeout)
+        try:
+            v = job.get(block=False, timeout=self.timeout)
+            self.logger.info({
+                'command': self.name,
+                'action': 'execute',
+                'fallback': None,
+                'timeout': self.timeout,
+                'success': 'yes',
+                'start_time': start_time,
+                'end_time': datetime.datetime.now(),
+                })
+
+            return v
+        except:
+            self.logger.error({
+                'command': self.name,
+                'action': 'execute',
+                'fallback': str(self.fallback),
+                'timeout': self.timeout,
+                'success': 'no',
+                'start_time': start_time,
+                'end_time': datetime.datetime.now(),
+                })
+            raise
+
+
 
 
 class BaseSyncCommand(BaseCommand):
@@ -127,13 +165,59 @@ class BaseSyncCommand(BaseCommand):
     def _do_fallback(self, *a, **kw):
         # TODO: logging
         with timeout(self.timeout):
-            return self.fallback(*a, **kw)
+            start_time = datetime.datetime.now()
+            try:
+                v = self.fallback(*a, **kw)
+                self.logger.info({
+                    'command': self.name,
+                    'action': 'fallback',
+                    'fallback': None,
+                    'timeout': self.timeout,
+                    'success': 'yes',
+                    'start_time': start_time,
+                    'end_time': datetime.datetime.now(),
+                    })
+                return v
+            except:
+                self.logger.error({
+                    'command': self.name,
+                    'action': 'fallback',
+                    'fallback': str(self.cache),
+                    'timeout': self.timeout,
+                    'success': 'no',
+                    'start_time': start_time,
+                    'end_time': datetime.datetime.now(),
+                    })
+                raise
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
         # TODO: logging
         with timeout(self.timeout):
-            return self.run(*a, **kw)
+            start_time = datetime.datetime.now()
+            try:
+                v = self.run(*a, **kw)
+                self.logger.info({
+                    'command': self.name,
+                    'action': 'execute',
+                    'fallback': None,
+                    'timeout': self.timeout,
+                    'success': 'yes',
+                    'start_time': start_time,
+                    'end_time': datetime.datetime.now(),
+                    })
+                return v
+            except:
+                self.logger.error({
+                    'command': self.name,
+                    'action': 'execute',
+                    'fallback': str(self.fallback),
+                    'timeout': self.timeout,
+                    'success': 'no',
+                    'start_time': start_time,
+                    'end_time': datetime.datetime.now(),
+                    })
+                raise
 
 
 
@@ -142,8 +226,8 @@ if __name__ == "__main__":
     from gevent import monkey
     monkey.patch_all()
 
-    class PowCommand(BaseAsyncCommand):
     #class PowCommand(BaseSyncCommand):
+    class PowCommand(BaseAsyncCommand):
 
         def run(self, n):
             raise Exception('a')
