@@ -9,11 +9,12 @@ import signal
 import datetime
 import traceback
 from functools import wraps
+from collections import OrderedDict
 from contextlib import contextmanager
 
 _logger = logging.getLogger(__name__)
 
-
+__all__ = ['TubbeTimeoutException', 'timeout', 'BaseAsyncCommand', 'BaseSyncCommand']
 
 class TubbeTimeoutException(Exception):
     pass
@@ -39,6 +40,9 @@ def timeout(seconds):
     signal.alarm(seconds)
     yield
 
+
+def _get_fullname(f):
+    return f.__module__ + "." + f.__name__
 
 class AbstractCommand(object):
 
@@ -79,15 +83,17 @@ class BaseAsyncCommand(BaseCommand):
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
         v = self.cache(*a, **kw)
-        self.logger.info({
-            'command': self.name,
-            'action': 'cache',
-            'fallback': None,
-            'timeout': self.timeout,
-            'success': 'yes',
-            'start_time': start_time,
-            'end_time': datetime.datetime.now(),
-            })
+        _info = OrderedDict([
+            ('start_time', start_time),
+            ('command', self.name),
+            ('action', 'cache'),
+            ('fallback', None),
+            ('timeout', self.timeout),
+            ('success', 'yes'),
+            ('end_time', datetime.datetime.now()),
+            ])
+
+        self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
         return v
 
 
@@ -99,61 +105,62 @@ class BaseAsyncCommand(BaseCommand):
         job.join(self.timeout)
         try:
             v = job.get(block=False, timeout=self.timeout)
-            self.logger.info({
-                'command': self.name,
-                'action': 'fallback',
-                'fallback': None,
-                'timeout': self.timeout,
-                'success': 'yes',
-                'start_time': start_time,
-                'end_time': datetime.datetime.now(),
-                })
-
+            _info = OrderedDict([
+                ('start_time', start_time),
+                ('command', self.name),
+                ('action', 'fallback'),
+                ('fallback', None),
+                ('timeout', self.timeout),
+                ('success', 'yes'),
+                ('end_time', datetime.datetime.now()),
+                ])
+            self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
             return v
         except:
-            self.logger.error({
-                'command': self.name,
-                'action': 'fallback',
-                'fallback': str(self.cache),
-                'timeout': self.timeout,
-                'success': 'no',
-                'start_time': start_time,
-                'end_time': datetime.datetime.now(),
-                })
+            _info = OrderedDict([
+                ('start_time', start_time),
+                ('command', self.name),
+                ('action', 'fallback'),
+                ('fallback', _get_fullname(self.cache)),
+                ('timeout', self.timeout),
+                ('success', 'no'),
+                ('end_time', datetime.datetime.now()),
+                ])
+            self.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
 
             raise
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
-        # TODO: logging
         start_time = datetime.datetime.now()
         job = gevent.Greenlet.spawn(self.run, *a, **kw)
         job.join(self.timeout)
         try:
             v = job.get(block=False, timeout=self.timeout)
-            self.logger.info({
-                'command': self.name,
-                'action': 'execute',
-                'fallback': None,
-                'timeout': self.timeout,
-                'success': 'yes',
-                'start_time': start_time,
-                'end_time': datetime.datetime.now(),
-                })
+            _info = OrderedDict([
+                ('start_time', start_time),
+                ('command', self.name),
+                ('action', 'execute'),
+                ('fallback', None),
+                ('timeout', self.timeout),
+                ('success', 'yes'),
+                ('end_time', datetime.datetime.now()),
+                ])
 
+            self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
             return v
         except:
-            self.logger.error({
-                'command': self.name,
-                'action': 'execute',
-                'fallback': str(self.fallback),
-                'timeout': self.timeout,
-                'success': 'no',
-                'start_time': start_time,
-                'end_time': datetime.datetime.now(),
-                })
+            _info = OrderedDict([
+                ('start_time', start_time),
+                ('command', self.name),
+                ('action', 'execute'),
+                ('fallback', _get_fullname(self.fallback)),
+                ('timeout', self.timeout),
+                ('success', 'no'),
+                ('end_time', datetime.datetime.now()),
+                ])
+            self.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
             raise
-
 
 
 
@@ -162,16 +169,17 @@ class BaseSyncCommand(BaseCommand):
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
         v = self.cache(*a, **kw)
-        self.logger.info({
-            'command': self.name,
-            'action': 'cache',
-            'fallback': None,
-            'timeout': self.timeout,
-            'success': 'yes',
-            'start_time': start_time,
-            'end_time': datetime.datetime.now(),
-            })
+        _info = OrderedDict([
+            ('start_time', start_time),
+            ('command', self.name),
+            ('action', 'cache'),
+            ('fallback', None),
+            ('timeout', self.timeout),
+            ('success', 'yes'),
+            ('end_time', datetime.datetime.now()),
+            ])
 
+        self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
         return v
 
     @_fallback(_do_cache)
@@ -180,54 +188,59 @@ class BaseSyncCommand(BaseCommand):
             start_time = datetime.datetime.now()
             try:
                 v = self.fallback(*a, **kw)
-                self.logger.info({
-                    'command': self.name,
-                    'action': 'fallback',
-                    'fallback': None,
-                    'timeout': self.timeout,
-                    'success': 'yes',
-                    'start_time': start_time,
-                    'end_time': datetime.datetime.now(),
-                    })
+                _info = OrderedDict([
+                    ('start_time', start_time),
+                    ('command', self.name),
+                    ('action', 'fallback'),
+                    ('fallback', None),
+                    ('timeout', self.timeout),
+                    ('success', 'yes'),
+                    ('end_time', datetime.datetime.now()),
+                    ])
+                self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return v
             except:
-                self.logger.error({
-                    'command': self.name,
-                    'action': 'fallback',
-                    'fallback': str(self.cache),
-                    'timeout': self.timeout,
-                    'success': 'no',
-                    'start_time': start_time,
-                    'end_time': datetime.datetime.now(),
-                    })
+                _info = OrderedDict([
+                    ('start_time', start_time),
+                    ('command', self.name),
+                    ('action', 'fallback'),
+                    ('fallback', _get_fullname(self.cache)),
+                    ('timeout', self.timeout),
+                    ('success', 'no'),
+                    ('end_time', datetime.datetime.now()),
+                    ])
+                self.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
                 raise
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
-        # TODO: logging
         with timeout(self.timeout):
             start_time = datetime.datetime.now()
             try:
                 v = self.run(*a, **kw)
-                self.logger.info({
-                    'command': self.name,
-                    'action': 'execute',
-                    'fallback': None,
-                    'timeout': self.timeout,
-                    'success': 'yes',
-                    'start_time': start_time,
-                    'end_time': datetime.datetime.now(),
-                    })
+                _info = OrderedDict([
+                    ('start_time', start_time),
+                    ('command', self.name),
+                    ('action', 'execute'),
+                    ('fallback', None),
+                    ('timeout', self.timeout),
+                    ('success', 'yes'),
+                    ('end_time', datetime.datetime.now()),
+                    ])
+
+                self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return v
             except:
-                self.logger.error({
-                    'command': self.name,
-                    'action': 'execute',
-                    'fallback': str(self.fallback),
-                    'timeout': self.timeout,
-                    'success': 'no',
-                    'start_time': start_time,
-                    'end_time': datetime.datetime.now(),
-                    })
+                _info = OrderedDict([
+                    ('start_time', start_time),
+                    ('command', self.name),
+                    ('action', 'execute'),
+                    ('fallback', _get_fullname(self.fallback)),
+                    ('timeout', self.timeout),
+                    ('success', 'no'),
+                    ('end_time', datetime.datetime.now()),
+                    ])
+
+                self.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
                 raise
 
