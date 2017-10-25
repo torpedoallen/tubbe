@@ -49,6 +49,7 @@ def timeout(seconds):
     signal.alarm(seconds)
     yield
 
+
 class AbstractCommand(object):
 
     __metaclass__ = abc.ABCMeta
@@ -69,6 +70,7 @@ class AbstractCommand(object):
     @abc.abstractmethod
     def cache(self, *a, **kw):
         pass
+
 
 class BaseCommand(AbstractCommand):
 
