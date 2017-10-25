@@ -32,5 +32,5 @@ handler = logging.FileHandler('/tmp/tubbe.log')
 handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
-c = PowCommand('pow', 2, logger=logger)
+c = PowCommand('pow', timeout=2, logger=logger)
 print c.execute(3)
