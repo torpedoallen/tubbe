@@ -15,15 +15,6 @@ _logger = logging.getLogger(__name__)
 
 
 
-"""
-log format: 
-
-log_level=DEBUG log_time=2017-10-24 10:01:58.728277 command_name=HelloWorldCommand timeout=2000 result=ok execute=200
-log_level=DEBUG log_time=2017-10-24 10:01:58.728277 command_name=HelloWorldCommand timeout=2000 result=fail execute=200 fallback=310 cache=92
-log_level=DEBUG log_time=2017-10-24 10:01:58.728277 command_name=HelloWorldCommand timeout=2000 result=fail execute=200 fallback=310 cache=92
-log_level=DEBUG log_time=2017-10-24 10:01:58.728277 command_name=HelloWorldCommand timeout=2000 result=fail execute=200 fallback=310 cache=92
-"""
-
 class TubbeTimeoutException(Exception):
     pass
 
@@ -86,12 +77,23 @@ class BaseCommand(AbstractCommand):
 class BaseAsyncCommand(BaseCommand):
 
     def _do_cache(self, *a, **kw):
-        # TODO: logging
-        return self.cache(*a, **kw)
+        start_time = datetime.datetime.now()
+        v = self.cache(*a, **kw)
+        self.logger.info({
+            'command': self.name,
+            'action': 'cache',
+            'fallback': None,
+            'timeout': self.timeout,
+            'success': 'yes',
+            'start_time': start_time,
+            'end_time': datetime.datetime.now(),
+            })
+        return v
+
+
 
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
-        # TODO: logging
         start_time = datetime.datetime.now()
         job = gevent.Greenlet.spawn(self.fallback, *a, **kw)
         job.join(self.timeout)
@@ -158,12 +160,22 @@ class BaseAsyncCommand(BaseCommand):
 class BaseSyncCommand(BaseCommand):
 
     def _do_cache(self, *a, **kw):
-        # TODO: logging
-        return self.cache(*a, **kw)
+        start_time = datetime.datetime.now()
+        v = self.cache(*a, **kw)
+        self.logger.info({
+            'command': self.name,
+            'action': 'cache',
+            'fallback': None,
+            'timeout': self.timeout,
+            'success': 'yes',
+            'start_time': start_time,
+            'end_time': datetime.datetime.now(),
+            })
+
+        return v
 
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
-        # TODO: logging
         with timeout(self.timeout):
             start_time = datetime.datetime.now()
             try:
@@ -219,26 +231,3 @@ class BaseSyncCommand(BaseCommand):
                     })
                 raise
 
-
-
-if __name__ == "__main__":
-    import time
-    from gevent import monkey
-    monkey.patch_all()
-
-    #class PowCommand(BaseSyncCommand):
-    class PowCommand(BaseAsyncCommand):
-
-        def run(self, n):
-            raise Exception('a')
-            return pow(n, 2)
-
-        def fallback(self, n):
-            time.sleep(3)
-            return pow(n, 3)
-
-        def cache(self, n):
-            return pow(n, 4)
-
-    c = PowCommand('pow', 2)
-    print c.execute(3)
