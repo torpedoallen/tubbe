@@ -19,6 +19,7 @@ setup(name='tubbe',
       zip_safe=False,
       install_requires=[
           # -*- Extra requirements: -*-
+          'gevent>=1.2.2',
       ],
       entry_points="""
       # -*- Entry points: -*-
