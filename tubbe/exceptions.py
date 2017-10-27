@@ -5,3 +5,6 @@ class TubbeTimeoutException(Exception):
 
 class TubbeCircuitBrokenException(Exception):
     pass
+
+class TubbeValidationException(Exception):
+    pass

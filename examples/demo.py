@@ -25,6 +25,9 @@ class PowCommand(BaseAsyncCommand):
     def cache(self, n):
         return pow(n, 4)
 
+    def validate(self, result):
+        return True
+
 logger = logging.getLogger(__name__)
 logger.propagate = False
 logger.setLevel(logging.INFO)

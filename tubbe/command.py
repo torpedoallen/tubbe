@@ -49,11 +49,10 @@ class AbstractCommand(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name, timeout=None, logger=None, validator=lambda x:x):
+    def __init__(self, name, timeout=None, logger=None):
         self.name = name
         self.timeout = timeout
         self.logger = logger or _logger
-        self.validator = validator
 
     @abc.abstractmethod
     def run(self, *a, **kw):
@@ -65,6 +64,10 @@ class AbstractCommand(object):
 
     @abc.abstractmethod
     def cache(self, *a, **kw):
+        pass
+
+    @abc.abstractmethod
+    def validate(self, result):
         pass
 
 
@@ -79,13 +82,17 @@ class BaseCommand(AbstractCommand):
     def cache(self, *a, **kw):
         raise NotImplemented
 
+    def validate(self, result):
+        raise NotImplemented
+
 
 class BaseAsyncCommand(BaseCommand):
 
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
         v = self.cache(*a, **kw)
-        v = self.validator(v)
+        if not self.validate(v):
+            raise exceptions.TubbeValidationException
         _info = OrderedDict([
             ('start_time', start_time),
             ('command', self.name),
@@ -108,7 +115,8 @@ class BaseAsyncCommand(BaseCommand):
         job.join(self.timeout)
         try:
             v = job.get(block=False, timeout=self.timeout)
-            v = self.validator(v)
+            if not self.validate(v):
+                raise exceptions.TubbeValidationException
             _info = OrderedDict([
                 ('start_time', start_time),
                 ('command', self.name),
@@ -143,7 +151,8 @@ class BaseAsyncCommand(BaseCommand):
             job = gevent.Greenlet.spawn(self.run, *a, **kw)
             job.join(self.timeout)
             v = job.get(block=False, timeout=self.timeout)
-            v = self.validator(v)
+            if not self.validate(v):
+                raise exceptions.TubbeValidationException
             _info = OrderedDict([
                 ('start_time', start_time),
                 ('command', self.name),
@@ -176,7 +185,8 @@ class BaseSyncCommand(BaseCommand):
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
         v = self.cache(*a, **kw)
-        v = self.validator(v)
+        if not self.validate(v):
+            raise exceptions.TubbeValidationException
         _info = OrderedDict([
             ('start_time', start_time),
             ('command', self.name),
@@ -196,7 +206,8 @@ class BaseSyncCommand(BaseCommand):
             start_time = datetime.datetime.now()
             try:
                 v = self.fallback(*a, **kw)
-                v = self.validator(v)
+                if not self.validate(v):
+                    raise exceptions.TubbeValidationException
                 _info = OrderedDict([
                     ('start_time', start_time),
                     ('command', self.name),
@@ -230,7 +241,9 @@ class BaseSyncCommand(BaseCommand):
                     raise exceptions.TubbeCircuitBrokenException
 
                 v = self.run(*a, **kw)
-                v = self.validator(v)
+                if not self.validate(v):
+                    raise exceptions.TubbeValidationException
+
                 _info = OrderedDict([
                     ('start_time', start_time),
                     ('command', self.name),
