@@ -91,8 +91,6 @@ class BaseAsyncCommand(BaseCommand):
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
         v = self.cache(*a, **kw)
-        if not self.validate(v):
-            raise exceptions.TubbeValidationException
         _info = OrderedDict([
             ('start_time', start_time),
             ('command', self.name),
@@ -185,8 +183,6 @@ class BaseSyncCommand(BaseCommand):
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
         v = self.cache(*a, **kw)
-        if not self.validate(v):
-            raise exceptions.TubbeValidationException
         _info = OrderedDict([
             ('start_time', start_time),
             ('command', self.name),
