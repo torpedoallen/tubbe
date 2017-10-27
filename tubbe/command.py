@@ -12,12 +12,13 @@ from functools import wraps
 from collections import OrderedDict
 from contextlib import contextmanager
 
+from . import circuit_breaker
+from . import exceptions
+
 _logger = logging.getLogger(__name__)
 
-__all__ = ['TubbeTimeoutException', 'timeout', 'BaseAsyncCommand', 'BaseSyncCommand']
+__all__ = ['BaseAsyncCommand', 'BaseSyncCommand']
 
-class TubbeTimeoutException(Exception):
-    pass
 
 def _fallback(callback):
     def deco(f):
@@ -32,9 +33,9 @@ def _fallback(callback):
 
 
 @contextmanager
-def timeout(seconds):
+def _timeout(seconds):
     def _handle_timeout(signum, frame):
-        raise TubbeTimeoutException('timeout')
+        raise exceptions.TubbeTimeoutException('timeout: {}'.format(seconds))
 
     signal.signal(signal.SIGALRM, _handle_timeout)
     signal.alarm(seconds)
@@ -136,9 +137,11 @@ class BaseAsyncCommand(BaseCommand):
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
         start_time = datetime.datetime.now()
-        job = gevent.Greenlet.spawn(self.run, *a, **kw)
-        job.join(self.timeout)
         try:
+            if circuit_breaker.is_break(self):
+                raise exceptions.TubbeCircuitBrokenException
+            job = gevent.Greenlet.spawn(self.run, *a, **kw)
+            job.join(self.timeout)
             v = job.get(block=False, timeout=self.timeout)
             v = self.validator(v)
             _info = OrderedDict([
@@ -189,7 +192,7 @@ class BaseSyncCommand(BaseCommand):
 
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
-        with timeout(self.timeout):
+        with _timeout(self.timeout):
             start_time = datetime.datetime.now()
             try:
                 v = self.fallback(*a, **kw)
@@ -220,9 +223,12 @@ class BaseSyncCommand(BaseCommand):
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
-        with timeout(self.timeout):
+        with _timeout(self.timeout):
             start_time = datetime.datetime.now()
             try:
+                if circuit_breaker.is_break(self):
+                    raise exceptions.TubbeCircuitBrokenException
+
                 v = self.run(*a, **kw)
                 v = self.validator(v)
                 _info = OrderedDict([
