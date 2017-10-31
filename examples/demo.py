@@ -11,8 +11,8 @@ monkey.patch_all()
 
 from tubbe.command import BaseAsyncCommand, BaseSyncCommand
 
-#class PowCommand(BaseSyncCommand):
-class PowCommand(BaseAsyncCommand):
+class PowCommand(BaseSyncCommand):
+#class PowCommand(BaseAsyncCommand):
 
     def run(self, n):
         raise Exception('a')

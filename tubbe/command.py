@@ -40,11 +40,12 @@ def _fallback(callback):
                     ('fallback', fallback),
                     ('timeout', timeout),
                     ('success', True),
+                    ('reason', ''),
                     ('end_time', datetime.datetime.now()),
                     ])
                 command.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return v
-            except:
+            except Exception as e:
                 _info = OrderedDict([
                     ('start_time', start_time),
                     ('command', name),
@@ -52,6 +53,7 @@ def _fallback(callback):
                     ('fallback', fallback),
                     ('timeout', timeout),
                     ('success', False),
+                    ('reason', hasattr(e, 'reason') and e.reason or 'unknown'),
                     ('end_time', datetime.datetime.now()),
                     ])
                 command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))

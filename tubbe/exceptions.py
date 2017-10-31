@@ -1,10 +1,15 @@
 # coding=utf8
 
-class TubbeTimeoutException(Exception):
-    pass
 
-class TubbeCircuitBrokenException(Exception):
-    pass
 
-class TubbeValidationException(Exception):
-    pass
+class TubbeBaseException(Exception):
+    reason = ''
+
+class TubbeTimeoutException(TubbeBaseException):
+    reason = 'invoking timeout'
+
+class TubbeCircuitBrokenException(TubbeBaseException):
+    reason = 'circuit breaker works'
+
+class TubbeValidationException(TubbeBaseException):
+    reason = 'validation error'
