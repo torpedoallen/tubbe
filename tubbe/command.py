@@ -118,12 +118,10 @@ class BaseAsyncCommand(BaseCommand):
 
     @_fallback(None)
     def _do_cache(self, *a, **kw):
-        start_time = datetime.datetime.now()
         return self.cache(*a, **kw)
 
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
-        start_time = datetime.datetime.now()
         job = gevent.Greenlet.spawn(self.fallback, *a, **kw)
         job.join(self.timeout)
         v = job.get(block=False, timeout=self.timeout)
@@ -133,7 +131,6 @@ class BaseAsyncCommand(BaseCommand):
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
-        start_time = datetime.datetime.now()
         if circuit_breaker.is_break(self):
             raise exceptions.TubbeCircuitBrokenException
         job = gevent.Greenlet.spawn(self.run, *a, **kw)
@@ -148,13 +145,11 @@ class BaseSyncCommand(BaseCommand):
 
     @_fallback(None)
     def _do_cache(self, *a, **kw):
-        start_time = datetime.datetime.now()
         return self.cache(*a, **kw)
 
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
         with _timeout(self.timeout):
-            start_time = datetime.datetime.now()
             v = self.fallback(*a, **kw)
             if not self.validate(v):
                 raise exceptions.TubbeValidationException
@@ -163,7 +158,6 @@ class BaseSyncCommand(BaseCommand):
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
         with _timeout(self.timeout):
-            start_time = datetime.datetime.now()
             if circuit_breaker.is_break(self):
                 raise exceptions.TubbeCircuitBrokenException
 
