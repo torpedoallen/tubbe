@@ -45,7 +45,7 @@ def _fallback(callback):
                     ])
                 command.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return v
-            except Exception as e:
+            except BaseException as e:
                 _info = OrderedDict([
                     ('start_time', start_time),
                     ('command', name),
