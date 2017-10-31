@@ -24,9 +24,8 @@ Tubbe是一个定义了统一降级处理流程的库，适用于任何远程，
     from gevent import monkey
     monkey.patch_all()
 
-    from tubbe.command import BaseAsyncCommand, BaseSyncCommand
+    from tubbe.command import BaseAsyncCommand
 
-    #class PowCommand(BaseSyncCommand):
     class PowCommand(BaseAsyncCommand):
 
         def run(self, n):
@@ -39,6 +38,9 @@ Tubbe是一个定义了统一降级处理流程的库，适用于任何远程，
 
         def cache(self, n):
             return pow(n, 4)
+
+        def validate(self, result):
+            return True
 
     logger = logging.getLogger(__name__)
     logger.propagate = False
