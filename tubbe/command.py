@@ -8,6 +8,7 @@ import logging
 import signal
 import datetime
 import traceback
+
 from functools import wraps
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -24,9 +25,36 @@ def _fallback(callback):
     def deco(f):
         @wraps(f)
         def _(*a, **kw):
+            command = a[0]
+            name = command.name
+            timeout = command.timeout
+            start_time = datetime.datetime.now()
+            action = f.__name__
+            fallback = callback.__name__
             try:
-                return f(*a, **kw)
+                v = f(*a, **kw)
+                _info = OrderedDict([
+                    ('start_time', start_time),
+                    ('command', name),
+                    ('action', action),
+                    ('fallback', fallback),
+                    ('timeout', timeout),
+                    ('success', True),
+                    ('end_time', datetime.datetime.now()),
+                    ])
+                command.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
+                return v
             except:
+                _info = OrderedDict([
+                    ('start_time', start_time),
+                    ('command', name),
+                    ('action', action),
+                    ('fallback', fallback),
+                    ('timeout', timeout),
+                    ('success', False),
+                    ('end_time', datetime.datetime.now()),
+                    ])
+                command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return callback(*a, **kw)
         return _
     return deco
@@ -90,179 +118,55 @@ class BaseAsyncCommand(BaseCommand):
 
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
-        v = self.cache(*a, **kw)
-        _info = OrderedDict([
-            ('start_time', start_time),
-            ('command', self.name),
-            ('action', 'cache'),
-            ('fallback', None),
-            ('timeout', self.timeout),
-            ('success', 'yes'),
-            ('end_time', datetime.datetime.now()),
-            ])
-
-        self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
-        return v
-
-
+        return self.cache(*a, **kw)
 
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
         start_time = datetime.datetime.now()
         job = gevent.Greenlet.spawn(self.fallback, *a, **kw)
         job.join(self.timeout)
-        try:
-            v = job.get(block=False, timeout=self.timeout)
-            if not self.validate(v):
-                raise exceptions.TubbeValidationException
-            _info = OrderedDict([
-                ('start_time', start_time),
-                ('command', self.name),
-                ('action', 'fallback'),
-                ('fallback', None),
-                ('timeout', self.timeout),
-                ('success', 'yes'),
-                ('end_time', datetime.datetime.now()),
-                ])
-            self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
-            return v
-        except:
-            _info = OrderedDict([
-                ('start_time', start_time),
-                ('command', self.name),
-                ('action', 'fallback'),
-                ('fallback', _get_fullname(self.cache)),
-                ('timeout', self.timeout),
-                ('success', 'no'),
-                ('end_time', datetime.datetime.now()),
-                ])
-            self.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
-
-            raise
+        v = job.get(block=False, timeout=self.timeout)
+        if not self.validate(v):
+            raise exceptions.TubbeValidationException
+        return v
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
         start_time = datetime.datetime.now()
-        try:
-            if circuit_breaker.is_break(self):
-                raise exceptions.TubbeCircuitBrokenException
-            job = gevent.Greenlet.spawn(self.run, *a, **kw)
-            job.join(self.timeout)
-            v = job.get(block=False, timeout=self.timeout)
-            if not self.validate(v):
-                raise exceptions.TubbeValidationException
-            _info = OrderedDict([
-                ('start_time', start_time),
-                ('command', self.name),
-                ('action', 'execute'),
-                ('fallback', None),
-                ('timeout', self.timeout),
-                ('success', 'yes'),
-                ('end_time', datetime.datetime.now()),
-                ])
-
-            self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
-            return v
-        except:
-            _info = OrderedDict([
-                ('start_time', start_time),
-                ('command', self.name),
-                ('action', 'execute'),
-                ('fallback', _get_fullname(self.fallback)),
-                ('timeout', self.timeout),
-                ('success', 'no'),
-                ('end_time', datetime.datetime.now()),
-                ])
-            self.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
-            raise
-
+        if circuit_breaker.is_break(self):
+            raise exceptions.TubbeCircuitBrokenException
+        job = gevent.Greenlet.spawn(self.run, *a, **kw)
+        job.join(self.timeout)
+        v = job.get(block=False, timeout=self.timeout)
+        if not self.validate(v):
+            raise exceptions.TubbeValidationException
+        return v
 
 
 class BaseSyncCommand(BaseCommand):
 
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
-        v = self.cache(*a, **kw)
-        _info = OrderedDict([
-            ('start_time', start_time),
-            ('command', self.name),
-            ('action', 'cache'),
-            ('fallback', None),
-            ('timeout', self.timeout),
-            ('success', 'yes'),
-            ('end_time', datetime.datetime.now()),
-            ])
-
-        self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
-        return v
+        return self.cache(*a, **kw)
 
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
         with _timeout(self.timeout):
             start_time = datetime.datetime.now()
-            try:
-                v = self.fallback(*a, **kw)
-                if not self.validate(v):
-                    raise exceptions.TubbeValidationException
-                _info = OrderedDict([
-                    ('start_time', start_time),
-                    ('command', self.name),
-                    ('action', 'fallback'),
-                    ('fallback', None),
-                    ('timeout', self.timeout),
-                    ('success', 'yes'),
-                    ('end_time', datetime.datetime.now()),
-                    ])
-                self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
-                return v
-            except:
-                _info = OrderedDict([
-                    ('start_time', start_time),
-                    ('command', self.name),
-                    ('action', 'fallback'),
-                    ('fallback', _get_fullname(self.cache)),
-                    ('timeout', self.timeout),
-                    ('success', 'no'),
-                    ('end_time', datetime.datetime.now()),
-                    ])
-                self.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
-                raise
+            v = self.fallback(*a, **kw)
+            if not self.validate(v):
+                raise exceptions.TubbeValidationException
+            return v
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
         with _timeout(self.timeout):
             start_time = datetime.datetime.now()
-            try:
-                if circuit_breaker.is_break(self):
-                    raise exceptions.TubbeCircuitBrokenException
+            if circuit_breaker.is_break(self):
+                raise exceptions.TubbeCircuitBrokenException
 
-                v = self.run(*a, **kw)
-                if not self.validate(v):
-                    raise exceptions.TubbeValidationException
-
-                _info = OrderedDict([
-                    ('start_time', start_time),
-                    ('command', self.name),
-                    ('action', 'execute'),
-                    ('fallback', None),
-                    ('timeout', self.timeout),
-                    ('success', 'yes'),
-                    ('end_time', datetime.datetime.now()),
-                    ])
-
-                self.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
-                return v
-            except:
-                _info = OrderedDict([
-                    ('start_time', start_time),
-                    ('command', self.name),
-                    ('action', 'execute'),
-                    ('fallback', _get_fullname(self.fallback)),
-                    ('timeout', self.timeout),
-                    ('success', 'no'),
-                    ('end_time', datetime.datetime.now()),
-                    ])
-
-                self.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
-                raise
+            v = self.run(*a, **kw)
+            if not self.validate(v):
+                raise exceptions.TubbeValidationException
+            return v
 
