@@ -53,7 +53,7 @@ def _fallback(callback):
                     ('fallback', fallback),
                     ('timeout', timeout),
                     ('success', False),
-                    ('reason', hasattr(e, 'reason') and e.reason or 'unknown'),
+                    ('reason', hasattr(e, 'reason') and e.reason or e.message),
                     ('end_time', datetime.datetime.now()),
                     ])
                 command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))

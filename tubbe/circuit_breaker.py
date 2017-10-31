@@ -5,6 +5,3 @@
 def is_broken(command):
     return False
 
-
-
-
