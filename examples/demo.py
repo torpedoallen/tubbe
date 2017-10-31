@@ -1,18 +1,12 @@
-
-
-
+# coding=utf8
 
 
 import time
 import logging
 
-from gevent import monkey
-monkey.patch_all()
+from tubbe.command import BaseSyncCommand
 
-from tubbe.command import BaseAsyncCommand, BaseSyncCommand
-
-#class PowCommand(BaseSyncCommand):
-class PowCommand(BaseAsyncCommand):
+class PowCommand(BaseSyncCommand):
 
     def run(self, n):
         raise Exception('a')

@@ -18,7 +18,7 @@ from . import exceptions
 
 _logger = logging.getLogger(__name__)
 
-__all__ = ['BaseAsyncCommand', 'BaseSyncCommand']
+__all__ = ['BaseGeventCommand', 'BaseSyncCommand']
 
 
 def _fallback(callback):
@@ -116,7 +116,7 @@ class BaseCommand(AbstractCommand):
         raise NotImplemented
 
 
-class BaseAsyncCommand(BaseCommand):
+class BaseGeventCommand(BaseCommand):
 
     @_fallback(None)
     def _do_cache(self, *a, **kw):
