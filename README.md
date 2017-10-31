@@ -11,7 +11,7 @@ Tubbe是一个定义了统一降级处理流程的库，受Netflix的Hystrix启�
     * 正常->异常
     * 异常->缓存
 
-2. 提供了`validate`接口方法，由使用者判断返回值不符合预期时的做法
+2. 提供了`validate`接口方法，由使用者定义对返回值的校验及处理方法
 
 3. 以异常为触发降级的基点，系统定义了三种异常（可能会扩展）: `TubbeTimeoutException`, `TubbeCircuitBrokenException`, `TubbeValidationException`，用户抛出的预期内或预期外的异常都会触发降级
 
