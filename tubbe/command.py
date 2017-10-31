@@ -30,7 +30,7 @@ def _fallback(callback):
             timeout = command.timeout
             start_time = datetime.datetime.now()
             action = f.__name__
-            fallback = callback.__name__
+            fallback = callback and callback.__name__ or None
             try:
                 v = f(*a, **kw)
                 _info = OrderedDict([
@@ -116,6 +116,7 @@ class BaseCommand(AbstractCommand):
 
 class BaseAsyncCommand(BaseCommand):
 
+    @_fallback(None)
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
         return self.cache(*a, **kw)
@@ -145,6 +146,7 @@ class BaseAsyncCommand(BaseCommand):
 
 class BaseSyncCommand(BaseCommand):
 
+    @_fallback(None)
     def _do_cache(self, *a, **kw):
         start_time = datetime.datetime.now()
         return self.cache(*a, **kw)
