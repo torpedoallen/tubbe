@@ -2,7 +2,7 @@
 
 
 
-def is_break(command):
+def is_broken(command):
     return False
 
 

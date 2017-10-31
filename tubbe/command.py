@@ -131,7 +131,7 @@ class BaseAsyncCommand(BaseCommand):
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
-        if circuit_breaker.is_break(self):
+        if circuit_breaker.is_broken(self):
             raise exceptions.TubbeCircuitBrokenException
         job = gevent.Greenlet.spawn(self.run, *a, **kw)
         job.join(self.timeout)
@@ -158,7 +158,7 @@ class BaseSyncCommand(BaseCommand):
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
         with _timeout(self.timeout):
-            if circuit_breaker.is_break(self):
+            if circuit_breaker.is_broken(self):
                 raise exceptions.TubbeCircuitBrokenException
 
             v = self.run(*a, **kw)
