@@ -1,9 +1,12 @@
 # Tubbe
 
-## What
+## What ?
 
-Tubbe is a latency and fault tolerance library designed to isolate points of access to remote systems,
-services and 3rd party libraries, stop cascading failure and enable resilience in complex distributed systems where failure is inevitable.
+Tubbe是一个定义了统一降级处理流程的库，适用于任何远程，服务接口，函数的调用，提供了两层降级:
+
+* 正常->异常
+* 异常->缓存
+
 
 
 ## Todo
