@@ -11,7 +11,6 @@ import traceback
 
 from functools import wraps
 from collections import OrderedDict
-from contextlib import contextmanager
 
 from . import circuit_breaker
 from . import exceptions
@@ -62,14 +61,43 @@ def _fallback(callback):
     return deco
 
 
-@contextmanager
-def _timeout(seconds):
-    def _handle_timeout(signum, frame):
-        raise exceptions.TubbeTimeoutException('timeout: {}'.format(seconds))
+class _timeout(object):
 
-    signal.signal(signal.SIGALRM, _handle_timeout)
-    signal.alarm(seconds)
-    yield
+
+    def __init__(self, seconds):
+        self.timeout = seconds
+        super(_timeout, self).__init__()
+
+    def _start(self):
+        self.sig_handler = signal.signal(signal.SIGALRM, self.__handler)
+        signal.alarm(self.timeout)
+
+    def _cleanup(self):
+        # reset
+        signal.signal(signal.SIGALRM, self.sig_handler)
+        signal.alarm(0)
+
+    def __enter__(self):
+        self._start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._cleanup()
+
+    def __call__(self, f):
+        def wrapped(*a, **kw):
+            self._start()
+            try:
+                return f(*a, **kw)
+            except exceptions.TubbeTimeoutException:
+                raise
+            finally:
+                self._cleanup()
+
+        return wrapped
+
+    def __handler(self, signum, frame):
+        raise exceptions.TubbeTimeoutException
 
 
 def _get_fullname(f):
