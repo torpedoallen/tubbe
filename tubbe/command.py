@@ -56,6 +56,8 @@ def _fallback(callback):
                     ('end_time', datetime.datetime.now()),
                     ])
                 command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
+                if not callback:
+                    raise
                 return callback(*a, **kw)
         return _
     return deco
