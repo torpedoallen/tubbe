@@ -32,6 +32,7 @@ def _fallback(callback):
             fallback = callback and callback.__name__ or None
             try:
                 v = f(*a, **kw)
+                end_time = datetime.datetime.now()
                 _info = OrderedDict([
                     ('start_time', start_time),
                     ('command', name),
@@ -40,11 +41,13 @@ def _fallback(callback):
                     ('timeout', timeout),
                     ('success', True),
                     ('reason', ''),
-                    ('end_time', datetime.datetime.now()),
+                    ('end_time', end_time),
+                    ('duration', end_time - start_time),
                     ])
                 command.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return v
             except BaseException as e:
+                end_time = datetime.datetime.now()
                 _info = OrderedDict([
                     ('start_time', start_time),
                     ('command', name),
@@ -53,11 +56,15 @@ def _fallback(callback):
                     ('timeout', timeout),
                     ('success', False),
                     ('reason', hasattr(e, 'reason') and e.reason or e.message),
-                    ('end_time', datetime.datetime.now()),
+                    ('end_time', end_time),
+                    ('duration', end_time - start_time),
                     ])
                 command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
+
+                # NOTE: raise in cache method
                 if not callback:
                     raise
+
                 return callback(*a, **kw)
         return _
     return deco
