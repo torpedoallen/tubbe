@@ -42,7 +42,7 @@ def _fallback(callback):
                     ('success', True),
                     ('reason', ''),
                     ('end_time', end_time),
-                    ('duration', (end_time - start_time).total_seconds),
+                    ('duration_ms', (end_time - start_time).total_seconds()*1000),
                     ])
                 command.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return v
@@ -57,7 +57,7 @@ def _fallback(callback):
                     ('success', False),
                     ('reason', hasattr(e, 'reason') and e.reason or e.message),
                     ('end_time', end_time),
-                    ('duration', (end_time - start_time).total_seconds),
+                    ('duration_ms', (end_time - start_time).total_seconds()*1000),
                     ])
                 command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
 
