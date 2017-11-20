@@ -4,6 +4,9 @@
 
 Tubbe是一个定义了统一降级处理流程的库，受Netflix的Hystrix启发，适用于任何远程，服务接口，函数的调用。
 
+## 工作流
+
+<img src="static/tubbe-flow.png">
 
 ## 核心思路
 
@@ -16,6 +19,7 @@ Tubbe是一个定义了统一降级处理流程的库，受Netflix的Hystrix启�
 3. 以异常为触发降级的基点，系统定义了三种异常（可能会扩展）: `TubbeTimeoutException`, `TubbeCircuitBrokenException`, `TubbeValidationException`，用户抛出的预期内或预期外的异常都会触发降级
 
 4. 目前`Command`都是同步类型的，未来考虑加入异步处理
+
 
 
 ## Todo
