@@ -12,7 +12,6 @@ import traceback
 from functools import wraps
 from collections import OrderedDict
 
-from . import circuit_breaker
 from . import exceptions
 
 _logger = logging.getLogger(__name__)
@@ -116,10 +115,12 @@ class AbstractCommand(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name, timeout=None, logger=None):
+    def __init__(self, name,
+            timeout=None, logger=None, circuit_breaker=lambda _:False):
         self.name = name
         self.timeout = timeout
         self.logger = logger or _logger
+        self.circuit_breaker = circuit_breaker
 
     @abc.abstractmethod
     def run(self, *a, **kw):
@@ -170,7 +171,7 @@ class BaseGeventCommand(BaseCommand):
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
-        if circuit_breaker.is_broken(self):
+        if self.circuit_breaker(self):
             raise exceptions.TubbeCircuitBrokenException
         job = gevent.Greenlet.spawn(self.run, *a, **kw)
         job.join(self.timeout)
@@ -197,7 +198,7 @@ class BaseSyncCommand(BaseCommand):
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
         with _timeout(self.timeout):
-            if circuit_breaker.is_broken(self):
+            if self.circuit_breaker(self):
                 raise exceptions.TubbeCircuitBrokenException
 
             v = self.run(*a, **kw)
