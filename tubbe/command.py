@@ -162,7 +162,7 @@ class BaseGeventCommand(BaseCommand):
 
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
-        job = gevent.Greenlet.spawn(self.fallback, *a, **kw)
+        job = gevent.spawn(self.fallback, *a, **kw)
         job.join(self.timeout)
         v = job.get(block=False, timeout=self.timeout)
         if not self.validate(v):
@@ -173,7 +173,7 @@ class BaseGeventCommand(BaseCommand):
     def execute(self, *a, **kw):
         if self.circuit_breaker(self):
             raise exceptions.TubbeCircuitBrokenException
-        job = gevent.Greenlet.spawn(self.run, *a, **kw)
+        job = gevent.spawn(self.run, *a, **kw)
         job.join(self.timeout)
         v = job.get(block=False, timeout=self.timeout)
         if not self.validate(v):

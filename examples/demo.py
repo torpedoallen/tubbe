@@ -1,12 +1,14 @@
 # coding=utf8
 
+from gevent import monkey
+monkey.patch_all()
 
 import time
 import logging
 
-from tubbe.command import BaseSyncCommand
+from tubbe.command import BaseSyncCommand, BaseGeventCommand
 
-class PowCommand(BaseSyncCommand):
+class PowCommand(BaseGeventCommand):
 
     def run(self, n):
         raise Exception('a')
@@ -14,6 +16,8 @@ class PowCommand(BaseSyncCommand):
 
     def fallback(self, n):
         time.sleep(3)
+        with open('/tmp/aa', 'w+') as f:
+            f.write('close')
         return pow(n, 3)
 
     def cache(self, n):
