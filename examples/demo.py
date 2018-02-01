@@ -1,17 +1,21 @@
 # coding=utf8
 
+
+import gevent
 from gevent import monkey
 monkey.patch_all()
 
 import time
 import logging
+import random
 
 from tubbe.command import BaseSyncCommand, BaseGeventCommand
 
 class PowCommand(BaseGeventCommand):
 
     def run(self, n):
-        raise Exception('a')
+        if random.randrange(2):
+            raise Exception('a')
         return pow(n, 2)
 
     def fallback(self, n):
@@ -34,4 +38,8 @@ handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
 c = PowCommand('pow', timeout=2, logger=logger)
-print c.execute(3)
+tasks = [gevent.spawn(c.execute, i%4) for i in xrange(1000)]
+gevent.joinall(tasks)
+time.sleep(5)
+tasks = [gevent.spawn(c.execute, i%4) for i in xrange(1000)]
+gevent.joinall(tasks)

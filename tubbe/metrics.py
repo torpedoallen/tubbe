@@ -29,9 +29,12 @@ class Window(object):
 
     @property
     def error_ratio(self):
+        self.lock.acquire()
         if not self.total_number:
             return 0.0
-        return self.error_number / float(self.total_number)
+        ret = self.error_number / float(self.total_number)
+        self.lock.release()
+        return ret
 
 
 class Counter(object):
