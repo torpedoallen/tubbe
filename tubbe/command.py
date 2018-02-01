@@ -12,7 +12,10 @@ import traceback
 from functools import wraps
 from collections import OrderedDict
 
+
 from . import exceptions
+from .circuit_breaker import PositiveCircuitBreaker
+from .metrics import Counter
 
 _logger = logging.getLogger(__name__)
 
@@ -31,6 +34,11 @@ def _fallback(callback):
             fallback = callback and callback.__name__ or None
             try:
                 v = f(*a, **kw)
+                # Counter: normal + 1
+                if action == 'execute':
+                    command.counter.incr_normal()
+
+                # logging
                 end_time = datetime.datetime.now()
                 _info = OrderedDict([
                     ('start_time', start_time),
@@ -42,10 +50,17 @@ def _fallback(callback):
                     ('reason', ''),
                     ('end_time', end_time),
                     ('duration_ms', (end_time - start_time).total_seconds()*1000),
+                    ('error_ratio', command.counter.error_ratio),
+                    ('error_number', command.counter.current_window.error_number),
+                    ('total_number', command.counter.current_window.total_number),
                     ])
                 command.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return v
             except BaseException as e:
+                # Counter: error + 1
+                if action == 'execute':
+                    command.counter.incr_error()
+
                 end_time = datetime.datetime.now()
                 _info = OrderedDict([
                     ('start_time', start_time),
@@ -57,6 +72,9 @@ def _fallback(callback):
                     ('reason', hasattr(e, 'reason') and e.reason or e.message),
                     ('end_time', end_time),
                     ('duration_ms', (end_time - start_time).total_seconds()*1000),
+                    ('error_ratio', command.counter.error_ratio),
+                    ('error_number', command.counter.current_window.error_number),
+                    ('total_number', command.counter.current_window.total_number),
                     ])
                 command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
 
@@ -116,11 +134,12 @@ class AbstractCommand(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, name,
-            timeout=None, logger=None, circuit_breaker=lambda _:False):
+            timeout=None, logger=None, circuit_breaker_class=None, counter=None):
         self.name = name
         self.timeout = timeout
         self.logger = logger or _logger
-        self.circuit_breaker = circuit_breaker
+        self.circuit_breaker = (circuit_breaker_class or PositiveCircuitBreaker)()
+        self.counter = counter or Counter(interval=10)
 
     @abc.abstractmethod
     def run(self, *a, **kw):
@@ -162,7 +181,7 @@ class BaseGeventCommand(BaseCommand):
 
     @_fallback(_do_cache)
     def _do_fallback(self, *a, **kw):
-        job = gevent.Greenlet.spawn(self.fallback, *a, **kw)
+        job = gevent.spawn(self.fallback, *a, **kw)
         job.join(self.timeout)
         v = job.get(block=False, timeout=self.timeout)
         if not self.validate(v):
@@ -171,9 +190,9 @@ class BaseGeventCommand(BaseCommand):
 
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
-        if self.circuit_breaker(self):
+        if self.circuit_breaker.break_or_not(self.counter):
             raise exceptions.TubbeCircuitBrokenException
-        job = gevent.Greenlet.spawn(self.run, *a, **kw)
+        job = gevent.spawn(self.run, *a, **kw)
         job.join(self.timeout)
         v = job.get(block=False, timeout=self.timeout)
         if not self.validate(v):
@@ -198,7 +217,7 @@ class BaseSyncCommand(BaseCommand):
     @_fallback(_do_fallback)
     def execute(self, *a, **kw):
         with _timeout(self.timeout):
-            if self.circuit_breaker(self):
+            if self.circuit_breaker.break_or_not(self.counter):
                 raise exceptions.TubbeCircuitBrokenException
 
             v = self.run(*a, **kw)
