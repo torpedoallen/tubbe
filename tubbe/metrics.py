@@ -14,15 +14,18 @@ class Window(object):
         self.error_number = 0
         self.created_time = datetime.datetime.now()
 
-    def incr_total_number(self):
+    def incr_error(self):
+        self.lock.acquire()
+        self.total_number += 1
+        self.error_number += 1
+        self.lock.release()
+        return self.total_number, self.error_number
+        
+    def incr_normal(self):
         self.lock.acquire()
         self.total_number += 1
         self.lock.release()
-        
-    def incr_error_number(self):
-        self.lock.acquire()
-        self.error_number += 1
-        self.lock.release()
+        return self.total_number, self.error_number
 
     @property
     def error_ratio(self):
@@ -43,17 +46,30 @@ class Counter(object):
         del self.window
         self.window = Window()
 
+    @property
+    def current_window(self):
+        return self.window or Window()
+
+    @property
+    def error_ratio(self):
+        return self.current_window.error_ratio
+
+    def incr_error(self):
+        return self.current_window.incr_error()
+
+    def incr_normal(self):
+        return self.current_window.incr_normal()
+
     def is_available(self):
         self.lock.acquire()
         now = datetime.datetime.now()
-        delta = now - self.window.created_time
-        print delta, self.interval
+        delta = now - self.current_window.created_time
         if delta.seconds < self.interval:
             # FIXME: not clear right here?
             self.lock.release()
             return True
 
-        if self.window.error_ratio >= self.threshold:
+        if self.error_ratio >= self.threshold:
             self._reset_window()
             self.lock.release()
             return False
@@ -61,16 +77,6 @@ class Counter(object):
         self._reset_window()
         self.lock.release()
         return True
-
-    def handle_income(self):
-        self.lock.acquire()
-        self.window.incr_total_number()
-        self.lock.release()
-
-    def handle_error(self):
-        self.lock.acquire()
-        self.window.incr_error_number()
-        self.lock.release()
 
 
 if __name__ == "__main__":
