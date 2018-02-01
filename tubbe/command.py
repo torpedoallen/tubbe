@@ -35,8 +35,7 @@ def _fallback(callback):
             try:
                 v = f(*a, **kw)
                 # Counter: normal + 1
-                if action == 'execute':
-                    command.counter.incr_normal()
+                command.counter.incr_normal()
 
                 # logging
                 end_time = datetime.datetime.now()
@@ -53,13 +52,14 @@ def _fallback(callback):
                     ('error_ratio', command.counter.error_ratio),
                     ('error_number', command.counter.current_window.error_number),
                     ('total_number', command.counter.current_window.total_number),
+                    ('window_created_time', command.counter.current_window.created_time),
+                    ('supposed_to_fallback', not command.counter.is_available()),
                     ])
                 command.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return v
             except BaseException as e:
                 # Counter: error + 1
-                if action == 'execute':
-                    command.counter.incr_error()
+                command.counter.incr_error()
 
                 end_time = datetime.datetime.now()
                 _info = OrderedDict([
@@ -75,6 +75,8 @@ def _fallback(callback):
                     ('error_ratio', command.counter.error_ratio),
                     ('error_number', command.counter.current_window.error_number),
                     ('total_number', command.counter.current_window.total_number),
+                    ('window_created_time', command.counter.current_window.created_time),
+                    ('supposed_to_fallback', not command.counter.is_available()),
                     ])
                 command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
 
