@@ -14,11 +14,18 @@ class AbstractCircuitBreaker(object):
         pass
 
 
-class DummyCircuitBreaker(AbstractCircuitBreaker):
+class PositiveCircuitBreaker(AbstractCircuitBreaker):
     ''' alway pass'''
 
     def break_or_not(self, counter):
         return False
+
+
+class NegativeCircuitBreaker(AbstractCircuitBreaker):
+    ''' alway fail'''
+
+    def break_or_not(self, counter):
+        return True
 
 
 class DefaultCircuitBreaker(AbstractCircuitBreaker):

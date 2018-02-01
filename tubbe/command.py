@@ -14,7 +14,7 @@ from collections import OrderedDict
 
 
 from . import exceptions
-from .circuit_breaker import DummyCircuitBreaker
+from .circuit_breaker import PositiveCircuitBreaker
 from .metrics import Counter
 
 _logger = logging.getLogger(__name__)
@@ -134,11 +134,11 @@ class AbstractCommand(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, name,
-            timeout=None, logger=None, circuit_breaker=None, counter=None):
+            timeout=None, logger=None, circuit_breaker_class=None, counter=None):
         self.name = name
         self.timeout = timeout
         self.logger = logger or _logger
-        self.circuit_breaker = circuit_breaker or DummyCircuitBreaker()
+        self.circuit_breaker = (circuit_breaker_class or PositiveCircuitBreaker)()
         self.counter = counter or Counter(interval=10)
 
     @abc.abstractmethod
