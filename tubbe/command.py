@@ -53,7 +53,7 @@ def _fallback(callback):
                     ('error_number', command.counter.current_window.error_number),
                     ('total_number', command.counter.current_window.total_number),
                     ('window_created_time', command.counter.current_window.created_time),
-                    ('supposed_to_fallback', not command.counter.is_available()),
+                    ('supposed_to_break', not command.counter.is_available()),
                     ])
                 command.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
                 return v
@@ -76,7 +76,7 @@ def _fallback(callback):
                     ('error_number', command.counter.current_window.error_number),
                     ('total_number', command.counter.current_window.total_number),
                     ('window_created_time', command.counter.current_window.created_time),
-                    ('supposed_to_fallback', not command.counter.is_available()),
+                    ('supposed_to_break', not command.counter.is_available()),
                     ])
                 command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
 
