@@ -18,49 +18,17 @@ Tubbe是一个定义了统一降级处理流程的库，受Netflix的Hystrix启�
 
 3. 以异常为触发降级的基点，系统定义了三种异常（可能会扩展）: `TubbeTimeoutException`, `TubbeCircuitBrokenException`, `TubbeValidationException`，用户抛出的预期内或预期外的异常都会触发降级
 
-4. 目前`Command`都是同步类型的，未来考虑加入异步处理
+4. Command分同步和异步两类，异步通过gevent实现
 
+5. 提供了metrics模块, 用来统计一个请求窗口（Window）内请求成功率和请求数量
 
+6. 提供了熔断模块`CircuitBreaker`, 可以通过实现抽象类自定义熔断方式，也可以使用内置的`NegativeCircuitBreaker`, `PositiveCircuitBreaker`, `DefaultCircuitBreaker`。
 
-## Todo
-
-* metrics collector
-* circuit breaker
+   * `DefaultCircuitBreaker`基于`Metrics Counter`实现，可以通过定义时间窗口`Window`的长度，健康阈值`threshold`自动进行熔断。
 
 
 ## Get Started
 
-```python
-    # coding=utf8
+   见 `examples/demo.py`
 
-    import time
-    import logging
 
-    from tubbe.command import BaseSyncCommand
-
-    class PowCommand(BaseSyncCommand):
-
-        def run(self, n):
-            raise Exception('a')
-            return pow(n, 2)
-
-        def fallback(self, n):
-            time.sleep(3)
-            return pow(n, 3)
-
-        def cache(self, n):
-            return pow(n, 4)
-
-        def validate(self, result):
-            return True
-
-    logger = logging.getLogger(__name__)
-    logger.propagate = False
-    logger.setLevel(logging.INFO)
-    handler = logging.FileHandler('/tmp/tubbe.log')
-    handler.setLevel(logging.DEBUG)
-    logger.addHandler(handler)
-
-    c = PowCommand('pow', timeout=2, logger=logger)
-    print c.execute(3)
-```

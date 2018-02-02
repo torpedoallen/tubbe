@@ -1,7 +1,16 @@
-from setuptools import setup, find_packages
-import sys, os
+# coding=utf8
 
-version = '0.4'
+from setuptools import setup, find_packages
+import sys, os, re
+
+version = None
+with open('tubbe/__init__.py', 'r') as f:
+    for line in f:
+        m = re.match(r'^__version__\s*=\s*(["\'])([^"\']+)\1', line)
+        if m:
+            version = m.group(2)
+            break
+
 
 setup(name='tubbe',
       version=version,
