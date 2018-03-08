@@ -22,6 +22,15 @@ _logger = logging.getLogger(__name__)
 __all__ = ['BaseGeventCommand', 'BaseSyncCommand']
 
 
+def datetime_formatter(dt):
+    if not dt:
+        return ''
+
+    if not isinstance(dt, datetime.datetime):
+        return ''
+
+    return dt.strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
+
 def _fallback(callback):
     def deco(f):
         @wraps(f)
@@ -40,19 +49,19 @@ def _fallback(callback):
                 # logging
                 end_time = datetime.datetime.now()
                 _info = OrderedDict([
-                    ('start_time', start_time),
+                    ('log_time', datetime_formatter(start_time)),
                     ('command', name),
                     ('action', action),
                     ('fallback', fallback),
                     ('timeout', timeout),
                     ('success', True),
                     ('reason', ''),
-                    ('end_time', end_time),
+                    ('end_time', datetime_formatter(end_time)),
                     ('duration_ms', (end_time - start_time).total_seconds()*1000),
                     ('error_ratio', command.counter.error_ratio),
                     ('error_number', command.counter.current_window.error_number),
                     ('total_number', command.counter.current_window.total_number),
-                    ('window_created_time', command.counter.current_window.created_time),
+                    ('window_created_time', datetime_formatter(command.counter.current_window.created_time)),
                     ('supposed_to_break', not command.counter.is_available()),
                     ])
                 command.logger.info('\t'.join(['%s=%s' % t for t in _info.items()]))
@@ -63,19 +72,19 @@ def _fallback(callback):
 
                 end_time = datetime.datetime.now()
                 _info = OrderedDict([
-                    ('start_time', start_time),
+                    ('log_time', datetime_formatter(start_time)),
                     ('command', name),
                     ('action', action),
                     ('fallback', fallback),
                     ('timeout', timeout),
                     ('success', False),
                     ('reason', hasattr(e, 'reason') and e.reason or e.message),
-                    ('end_time', end_time),
+                    ('end_time', datetime_formatter(end_time)),
                     ('duration_ms', (end_time - start_time).total_seconds()*1000),
                     ('error_ratio', command.counter.error_ratio),
                     ('error_number', command.counter.current_window.error_number),
                     ('total_number', command.counter.current_window.total_number),
-                    ('window_created_time', command.counter.current_window.created_time),
+                    ('window_created_time', datetime_formatter(command.counter.current_window.created_time)),
                     ('supposed_to_break', not command.counter.is_available()),
                     ])
                 command.logger.error('\t'.join(['%s=%s' % t for t in _info.items()]))
