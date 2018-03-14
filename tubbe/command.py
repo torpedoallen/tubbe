@@ -8,6 +8,7 @@ import logging
 import signal
 import datetime
 import traceback
+import socket
 
 from functools import wraps
 from collections import OrderedDict
@@ -50,6 +51,7 @@ def _fallback(callback):
                 end_time = datetime.datetime.now()
                 _info = OrderedDict([
                     ('log_time', datetime_formatter(start_time)),
+                    ('hostname', socket.gethostname()),
                     ('command', name),
                     ('action', action),
                     ('fallback', fallback),
@@ -73,6 +75,7 @@ def _fallback(callback):
                 end_time = datetime.datetime.now()
                 _info = OrderedDict([
                     ('log_time', datetime_formatter(start_time)),
+                    ('hostname', socket.gethostname()),
                     ('command', name),
                     ('action', action),
                     ('fallback', fallback),
