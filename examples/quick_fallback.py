@@ -36,7 +36,7 @@ command = DemoCommand('demo_test', timeout=1, logger=logger,
 
 
 # NOTE: 如果是本地需要起switch服务，否则默认不熔断
-# NOTE: 如果是生产环境需要保证switch项已经创建，否则默认不熔断
-# NOTE: switch item字段名为toggle，类型bool，True为熔断，False为不熔断,
+# NOTE: 如果是生产环境需要保证switch项已经创建，否则默认不熔断, 上线前一定要保证switch已经创建
+# NOTE: switch item名称和Command保持一致，field名为toggle，类型bool，True为熔断，False为不熔断,
 #       get_switch_info 返回值样例 {'toggle': True}
 print command.execute()
