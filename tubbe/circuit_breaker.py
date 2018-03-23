@@ -46,8 +46,9 @@ class SwitchCircuitBreaker(AbstractCircuitBreaker):
     ''' switch service based circuit breaker '''
 
     def break_or_not(self, counter):
-        val = get_switch_info(self.name, {u'toggle': False})
         try:
+            # NOTE: default not break
+            val = get_switch_info(self.name, {u'toggle': False})
             return val[u'toggle'] == True
         except:
             traceback.print_exc()
