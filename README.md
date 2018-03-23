@@ -29,6 +29,15 @@ Tubbe是一个定义了统一降级处理流程的库，受Netflix的Hystrix启�
 
 ## Get Started
 
+
+### Basic
+
    见 `examples/demo.py`
 
 
+### Advance
+
+   见 `examples/quick_fallback.py`
+
+   * 参考下图创建switch开关 http://switch.intra.yongqianbao.com
+   <img src="static/switch.png">
