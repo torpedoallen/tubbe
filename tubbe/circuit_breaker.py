@@ -3,11 +3,18 @@
 
 
 import abc
+import traceback
+
+from switch_client.base import get_switch_info
 
 
 class AbstractCircuitBreaker(object):
 
     __metaclass__ = abc.ABCMeta
+
+
+    def __init__(self, name):
+        self.name = name
 
     @abc.abstractmethod
     def break_or_not(self, *a, **kw):
@@ -33,3 +40,16 @@ class DefaultCircuitBreaker(AbstractCircuitBreaker):
 
     def break_or_not(self, counter):
         return not counter.is_available()
+
+
+class SwitchCircuitBreaker(AbstractCircuitBreaker):
+    ''' switch service based circuit breaker '''
+
+    def break_or_not(self, counter):
+        try:
+            # NOTE: default not break
+            val = get_switch_info(self.name, {u'toggle': False})
+            return val[u'toggle'] == True
+        except:
+            traceback.print_exc()
+            return False
