@@ -156,7 +156,7 @@ class AbstractCommand(object):
         self.name = name
         self.timeout = timeout
         self.logger = logger or _logger
-        self.circuit_breaker = (circuit_breaker_class or PositiveCircuitBreaker)()
+        self.circuit_breaker = (circuit_breaker_class or PositiveCircuitBreaker)(name)
         self.counter = counter or Counter(interval=10)
 
     @abc.abstractmethod
