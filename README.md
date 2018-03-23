@@ -22,13 +22,20 @@ Tubbe是一个定义了统一降级处理流程的库，受Netflix的Hystrix启�
 
 5. 提供了metrics模块, 用来统计一个请求窗口（Window）内请求成功率和请求数量
 
-6. 提供了熔断模块`CircuitBreaker`, 可以通过实现抽象类自定义熔断方式，也可以使用内置的`NegativeCircuitBreaker`, `PositiveCircuitBreaker`, `DefaultCircuitBreaker`。
+6. 提供了熔断模块`CircuitBreaker`, 可以通过实现抽象类自定义熔断方式，也可以使用内置的`NegativeCircuitBreaker`, `PositiveCircuitBreaker`, `DefaultCircuitBreaker`, `SwitchCircuitBreaker`。
 
    * `DefaultCircuitBreaker`基于`Metrics Counter`实现，可以通过定义时间窗口`Window`的长度，健康阈值`threshold`自动进行熔断。
+   * `SwitchCircuitBreaker`基于switch服务 http://switch.intra.yongqianbao.com ，实现了一键熔断的功能。
 
 
 ## Get Started
 
+
+### Install
+
+```
+    pip install tubbe  -i http://pypi.intra.yongqianbao.com --trusted-host pypi.intra.yongqianbao.com
+```
 
 ### Basic
 
@@ -39,5 +46,5 @@ Tubbe是一个定义了统一降级处理流程的库，受Netflix的Hystrix启�
 
    见 `examples/quick_fallback.py`
 
-   * 参考下图创建switch开关 http://switch.intra.yongqianbao.com
+   * 参考下图创建switch开关 
    <img src="static/switch.png">
