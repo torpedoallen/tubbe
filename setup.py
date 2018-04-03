@@ -29,7 +29,7 @@ setup(name='tubbe',
       install_requires=[
           # -*- Extra requirements: -*-
           'gevent>=1.2.2',
-          'switch>=0.0.1',
+          'switch>=0.0.3',
       ],
       entry_points="""
       # -*- Entry points: -*-

@@ -5,7 +5,7 @@
 import abc
 import traceback
 
-from switch_client.base import get_switch_info
+from switch_client.base import get_switch_info, LocalPrioritizedClient
 
 
 class AbstractCircuitBreaker(object):
@@ -48,7 +48,7 @@ class SwitchCircuitBreaker(AbstractCircuitBreaker):
     def break_or_not(self, counter):
         try:
             # NOTE: default not break
-            val = get_switch_info(self.name, {u'toggle': False})
+            val = get_switch_info(self.name, {u'toggle': False}, client_class=LocalPrioritizedClient)
             return val[u'toggle'] == True
         except:
             traceback.print_exc()
