@@ -48,7 +48,9 @@ class SwitchCircuitBreaker(AbstractCircuitBreaker):
     def break_or_not(self, counter):
         try:
             # NOTE: default not break
-            val = get_switch_info(self.name, {u'toggle': False}, client_class=LocalPrioritizedClient)
+            val = get_switch_info(self.name, {u'toggle': False},
+                                    client_class=LocalPrioritizedClient,
+                                    expire_interval=5)
             return val[u'toggle'] == True
         except:
             traceback.print_exc()
