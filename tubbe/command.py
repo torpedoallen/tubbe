@@ -1,6 +1,6 @@
 # coding=utf8
 
-
+from __future__ import absolute_import
 
 import six
 import abc
@@ -13,6 +13,7 @@ import socket
 
 from functools import wraps
 from collections import OrderedDict
+from six import with_metaclass
 
 
 from . import exceptions
