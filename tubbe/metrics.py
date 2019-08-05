@@ -98,10 +98,10 @@ if __name__ == "__main__":
             time.sleep(0.1)
             if random.randrange(2):
                 c.handle_error()
-        print process.memory_info().rss, \
-                c.window.error_ratio, c.window.error_number, c.window.total_number
-        print c.is_available()
-        print '-> run next test'
+        print(process.memory_info().rss, \
+                c.window.error_ratio, c.window.error_number, c.window.total_number)
+        print(c.is_available())
+        print('-> run next test')
 
 
 

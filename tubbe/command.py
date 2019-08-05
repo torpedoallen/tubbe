@@ -2,6 +2,7 @@
 
 
 
+import six
 import abc
 import gevent
 import logging
@@ -147,9 +148,7 @@ class _timeout(object):
 def _get_fullname(f):
     return f.__module__ + "." + f.__name__
 
-class AbstractCommand(object):
-
-    __metaclass__ = abc.ABCMeta
+class AbstractCommand(with_metaclass(abc.ABCMeta, object)):
 
     def __init__(self, name,
             timeout=None, logger=None, circuit_breaker_class=None, counter=None):

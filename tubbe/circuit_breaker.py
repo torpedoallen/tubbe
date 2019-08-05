@@ -4,14 +4,12 @@
 
 import abc
 import traceback
+from six import with_metaclass
 
 from switch_client.base import get_switch_info_plus, LocalPrioritizedClient
 
 
-class AbstractCircuitBreaker(object):
-
-    __metaclass__ = abc.ABCMeta
-
+class AbstractCircuitBreaker(with_metaclass(abc.ABCMeta, object)):
 
     def __init__(self, name):
         self.name = name
@@ -48,10 +46,10 @@ class SwitchCircuitBreaker(AbstractCircuitBreaker):
     def break_or_not(self, counter):
         try:
             # NOTE: default not break
-            val = get_switch_info_plus(self.name, {u'toggle': False},
+            val = get_switch_info_plus(self.name, {six.u('toggle'): False},
                                     client_class=LocalPrioritizedClient,
                                     expire_interval=5)
-            return val[u'toggle'] == True
+            return val[six.u('toggle')] == True
         except:
             traceback.print_exc()
             return False
