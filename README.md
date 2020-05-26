@@ -34,7 +34,7 @@ Tubbe是一个定义了统一降级处理流程的库，受Netflix的Hystrix启�
 ### Install
 
 ```
-    pip install tubbe  -i http://pypi.intra.yongqianbao.com --trusted-host pypi.intra.yongqianbao.com
+    pip install tubbe
 ```
 
 ### Basic
